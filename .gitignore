@@ -1,0 +1,11 @@
+*.pyc
+testlog
+__pychache__
+.pypirc
+dist
+build
+doit.sh
+foo.py
+training/g2p_de.ckpt
+training/result
+training/training.md

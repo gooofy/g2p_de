@@ -1,0 +1,2 @@
+include g2p_de/checkpoint_de.npz
+include g2p_de/german_mfa.dict
