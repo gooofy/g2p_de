@@ -11,7 +11,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
   name = 'g2p_de',
   packages = ['g2p_de'], # this must be the same as the name above
-  version = '1.0.2',
+  version = '1.1.0',
   description = 'A Simple Python Module for German Grapheme To Phoneme Conversion',
   long_description=long_description,
   author = 'Günter Bartsch, Kyubyong Park, Jongseok Kim',
