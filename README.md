@@ -42,7 +42,6 @@ Note: This implementation does not deal with homographs yet.
         for text in texts:
             out = g2p(text)
             print(out)
-        from g2p_de import G2p
 
 result:
 
@@ -57,12 +56,12 @@ result:
     cd training
     ./train.py
 
-| hidden | embedding | num_errors | run                | train % |
-|--------|-----------|------------|--------------------|---------|
-| 256    | 64        | 15050      | Mar31_13-48-03_hal | 80      |
-| 128    | 128       | 19300      | Mar31_14-34-31_hal | 80      |
-| 128    | 64        | 19512      | Mar31_15-27-23_hal | 80      |
-| 128    | 64        |            | Mar31_16-17-16_hal | 90      |
-
-
+| hidden | embedding | num_errors | run                | train %       |
+|--------|-----------|------------|--------------------|---------------|
+| 256    | 64        | 15050      | Mar31_13-48-03_hal | 80            |
+| 128    | 128       | 19300      | Mar31_14-34-31_hal | 80            |
+| 128    | 64        | 19512      | Mar31_15-27-23_hal | 80            |
+| 128    | 64        | 18065      | Mar31_16-17-16_hal | 90            |
+| 256    | 64        | 15414      | Mar31_17-08-33_hal | 90            |
+| 256    | 64        | 14771      | Mar31_18-05-01_hal | 90 early stop |
 

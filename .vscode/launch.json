@@ -21,6 +21,15 @@
             "console": "integratedTerminal",
             "args": [],
             "cwd": "${workspaceFolder}/training"
+        },
+        {
+            "name": "demo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "demo.py",
+            "console": "integratedTerminal",
+            "args": [],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

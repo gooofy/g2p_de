@@ -11,3 +11,4 @@ training/result.txt
 training/training.md
 training/runs/
 g2p_de.egg-info/
+training/checkpoint_de.npz

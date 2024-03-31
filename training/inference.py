@@ -92,7 +92,7 @@ def g2p_de(model, word, g2idx, idx2p):
 
     print (f"decoder_inputs={decoder_inputs}")
 
-    _, y_hat = model(x, x_seqlens, decoder_inputs, False, hp.dec_maxlen) # <- teacher forcing is suppressed.
+    _, y_hat = model(x.to(device), x_seqlens, decoder_inputs.to(device), False, hp['model']['dec_maxlen']) # <- teacher forcing is suppressed.
 
     print (f"y_hat={y_hat}")
 

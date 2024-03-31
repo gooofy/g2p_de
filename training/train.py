@@ -2,12 +2,13 @@
 
 # adapted to german mfa from: https://github.com/Kyubyong/nlp_made_easy/blob/master/PyTorch%20seq2seq%20template%20based%20on%20the%20g2p%20task.ipynb
 
+import os
+import sys
+
 import numpy as np
 from tqdm import tqdm
 from distance import levenshtein
 from pathlib import Path
-import os
-import math
 import yaml
 
 import torch
@@ -187,6 +188,27 @@ def eval(model, iterator, device, dec_maxlen):
 
     return per, num_errors
 
+def save_model (state_dict):
+
+    torch.save(state_dict, MODEL_PATH)
+    # print (f"{MODEL_PATH} written.")
+
+    np.savez (NPZ_PATH, enc_emb  = state_dict['encoder.emb.weight'].cpu(),
+                        enc_w_ih = state_dict['encoder.rnn.weight_ih_l0'].cpu(),
+                        enc_w_hh = state_dict['encoder.rnn.weight_hh_l0'].cpu(),
+                        enc_b_ih = state_dict['encoder.rnn.bias_ih_l0'].cpu(),
+                        enc_b_hh = state_dict['encoder.rnn.bias_hh_l0'].cpu(),
+                        dec_emb  = state_dict['decoder.emb.weight'].cpu(),
+                        dec_w_ih = state_dict['decoder.rnn.weight_ih_l0'].cpu(),
+                        dec_w_hh = state_dict['decoder.rnn.weight_hh_l0'].cpu(),
+                        dec_b_ih = state_dict['decoder.rnn.bias_ih_l0'].cpu(),
+                        dec_b_hh = state_dict['decoder.rnn.bias_hh_l0'].cpu(),
+                        fc_w     = state_dict['decoder.fc.weight'].cpu(),
+                        fc_b     = state_dict['decoder.fc.bias'].cpu())
+
+    #print (f"{NPZ_PATH} written.")
+
+
 hp = yaml.load( open(CONFIG_PATH, "r"), Loader=yaml.FullLoader)
 
 g2idx, idx2g, p2idx, idx2p = load_vocab(hp)
@@ -251,6 +273,9 @@ writer = SummaryWriter()
 
 t = tqdm(range(1, hp['training']['num_epochs']+1))
 
+best_errs = sys.maxsize
+best_epoch = 0
+
 for epoch in t:
     # print(f"\nepoch: {epoch}/{hp['training']['num_epochs']}")
     loss = train(model, train_iter, optimizer, criterion, device)
@@ -259,28 +284,14 @@ for epoch in t:
 
     _, num_errors = eval(model, eval_iter, device, hp['model']['dec_maxlen'])
 
-    t.set_description(f"loss={loss}, errs={num_errors}, lr={optimizer.param_groups[0]['lr']}")
+    t.set_description(f"loss={loss:.3f}, errs={num_errors}[{best_errs}@{best_epoch}], lr={optimizer.param_groups[0]['lr']}")
 
     writer.add_scalar('errs', num_errors, epoch)
     writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
 
-state_dict = model.state_dict()
+    if num_errors < best_errs:
+        best_errs = num_errors
+        best_epoch = epoch
+        save_model(model.state_dict())
 
-torch.save(state_dict, MODEL_PATH)
-print (f"{MODEL_PATH} written.")
-
-np.savez (NPZ_PATH, enc_emb  = state_dict['encoder.emb.weight'].cpu(),
-                    enc_w_ih = state_dict['encoder.rnn.weight_ih_l0'].cpu(),
-                    enc_w_hh = state_dict['encoder.rnn.weight_hh_l0'].cpu(),
-                    enc_b_ih = state_dict['encoder.rnn.bias_ih_l0'].cpu(),
-                    enc_b_hh = state_dict['encoder.rnn.bias_hh_l0'].cpu(),
-                    dec_emb  = state_dict['decoder.emb.weight'].cpu(),
-                    dec_w_ih = state_dict['decoder.rnn.weight_ih_l0'].cpu(),
-                    dec_w_hh = state_dict['decoder.rnn.weight_hh_l0'].cpu(),
-                    dec_b_ih = state_dict['decoder.rnn.bias_ih_l0'].cpu(),
-                    dec_b_hh = state_dict['decoder.rnn.bias_hh_l0'].cpu(),
-                    fc_w     = state_dict['decoder.fc.weight'].cpu(),
-                    fc_b     = state_dict['decoder.fc.bias'].cpu())
-
-print (f"{NPZ_PATH} written.")
 
