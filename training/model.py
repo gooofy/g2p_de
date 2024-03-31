@@ -3,25 +3,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-class Hparams:
-    batch_size = 128
-    enc_maxlen = 20
-    dec_maxlen = 20
-    num_epochs = 42
-    # num_epochs = 2
-    hidden_units = 128
-    emb_units = 64
-    graphemes = ["<pad>", "<unk>", "</s>"] + list("abcdefghijklmnopqrstuvwxyzüöäß")
-    phonemes = ["<pad>", "<unk>", "<s>", "</s>"] + ['ts', 'ə', 'iː', 'oː', 'pf', 'aj', 'd', 'tʃ', 'm', 'œ', 'z', 'ɛ', 'ɲ', 't', 'ɟ', 'n̩', 'b', 'ɪ', 'kʰ', 'h', 'eː', 'ɔ', 'f', 'v', 'l̩', 'n', 'x', 'yː', 'p', 'c', 'aː', 'ç', 'uː', 'ʃ', 'øː', 'a', 'l', 'j', 'ɔʏ', 'cʰ', 'aw', 'ŋ', 'ɐ', 'ʊ', 'pʰ', 'ʁ', 's', 'ʏ', 'ɡ', 'tʰ', 'k', 'm̩']
-    lr = 0.001
-    logdir = "log/01"
+#class Hparams:
+#    batch_size = 2048
+#    enc_maxlen = 20
+#    dec_maxlen = 20
+#    # num_epochs = 42
+#    num_epochs = 2
+#    hidden_units = 128
+#    emb_units = 64
+#    graphemes = ["<pad>", "<unk>", "</s>"] + list("abcdefghijklmnopqrstuvwxyzüöäß")
+#    phonemes = ["<pad>", "<unk>", "<s>", "</s>"] + ['ts', 'ə', 'iː', 'oː', 'pf', 'aj', 'd', 'tʃ', 'm', 'œ', 'z', 'ɛ', 'ɲ', 't', 'ɟ', 'n̩', 'b', 'ɪ', 'kʰ', 'h', 'eː', 'ɔ', 'f', 'v', 'l̩', 'n', 'x', 'yː', 'p', 'c', 'aː', 'ç', 'uː', 'ʃ', 'øː', 'a', 'l', 'j', 'ɔʏ', 'cʰ', 'aw', 'ŋ', 'ɐ', 'ʊ', 'pʰ', 'ʁ', 's', 'ʏ', 'ɡ', 'tʰ', 'k', 'm̩']
+#    lr = 0.001
+#    logdir = "log/01"
 
-def load_vocab(hp:Hparams):
-    g2idx = {g: idx for idx, g in enumerate(hp.graphemes)}
-    idx2g = {idx: g for idx, g in enumerate(hp.graphemes)}
+def load_vocab(hp):
+    g2idx = {g: idx for idx, g in enumerate(hp['model']['graphemes'])}
+    idx2g = {idx: g for idx, g in enumerate(hp['model']['graphemes'])}
 
-    p2idx = {p: idx for idx, p in enumerate(hp.phonemes)}
-    idx2p = {idx: p for idx, p in enumerate(hp.phonemes)}
+    p2idx = {p: idx for idx, p in enumerate(hp['model']['phonemes'])}
+    idx2p = {idx: p for idx, p in enumerate(hp['model']['phonemes'])}
 
     return g2idx, idx2g, p2idx, idx2p # note that g and p mean grapheme and phoneme, respectively.
 

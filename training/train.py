@@ -3,34 +3,34 @@
 # adapted to german mfa from: https://github.com/Kyubyong/nlp_made_easy/blob/master/PyTorch%20seq2seq%20template%20based%20on%20the%20g2p%20task.ipynb
 
 import numpy as np
-from tqdm import tqdm # from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
 from distance import levenshtein
 from pathlib import Path
 import os
 import math
+import yaml
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils import data
+from torch.utils.tensorboard import SummaryWriter
 
-from model import Encoder, Decoder, Net, Hparams, load_vocab
+from model import Encoder, Decoder, Net, load_vocab
 from g2pdata import G2pDataset, convert_ids_to_phonemes
 
-LEXICON_DE = Path('/home/guenter/projects/hal9000/ennis/chat/src/efficientspeech/lexicon/german_mfa.dict')
+CONTINUE_TRAINING = True
 
+LEXICON_DE = Path('../g2p_de/german_mfa.dict')
+
+CONFIG_PATH = Path('../g2p_de/de_tiny.yaml')
 MODEL_PATH = Path('g2p_de.ckpt')
+NPZ_PATH = Path('checkpoint_de.npz')
 
 # DEBUG_LIMIT = 23
 DEBUG_LIMIT = 0
 
-hp = Hparams()
-
-g2idx, idx2g, p2idx, idx2p = load_vocab(hp)
-
-# print (f"g2idx={g2idx}")
-# print (f"p2idx={p2idx}")
-
-def load_lex(lexicon_path:Path, hp:Hparams):
+def load_lex(lexicon_path:Path, hp):
 
     lexicon = {} # word -> [ phonemes ]
 
@@ -41,10 +41,14 @@ def load_lex(lexicon_path:Path, hp:Hparams):
                 continue
 
             graph = parts[0]
+
+            if graph in lexicon:
+                continue
+
             phonemes = parts[1].split(' ')
             valid = True
             for c in graph:
-                if not c in hp.graphemes:
+                if not c in hp['model']['graphemes']:
                     valid = False
                     break
 
@@ -59,9 +63,6 @@ def load_lex(lexicon_path:Path, hp:Hparams):
                 break
 
     return lexicon
-
-
-lexicon = load_lex(LEXICON_DE, hp)
 
 def prepare_data(lexicon):
 
@@ -87,10 +88,6 @@ def prepare_data(lexicon):
                                           prons[-num_test:]
     return train_words, eval_words, test_words, train_prons, eval_prons, test_prons
 
-train_words, eval_words, test_words, train_prons, eval_prons, test_prons = prepare_data(lexicon)
-#print(train_words[0])
-#print(train_prons[0])
-
 def drop_lengthy_samples(words, prons, enc_maxlen, dec_maxlen):
     """We only include such samples less than maxlen."""
     _words, _prons = [], []
@@ -100,9 +97,6 @@ def drop_lengthy_samples(words, prons, enc_maxlen, dec_maxlen):
         _words.append(w)
         _prons.append(p)
     return _words, _prons
-
-train_words, train_prons = drop_lengthy_samples(train_words, train_prons, hp.enc_maxlen, hp.dec_maxlen)
-# We do NOT apply this constraint to eval and test datasets.
 
 def pad(batch):
     '''Pads zeros such that the length of all samples in a batch is the same.'''
@@ -149,6 +143,8 @@ def train(model, iterator, optimizer, criterion, device):
         if i and i%100==0:
             print(f"step: {i}, loss: {loss.item()}")
 
+    return loss.item()
+
 def calc_per(Y_true, Y_pred):
     '''Calc phoneme error rate
     Y_true: list of predicted phoneme sequences. e.g., [["B", "L", "AA1", "K", "HH", "AW2", "S"], ...]
@@ -183,14 +179,32 @@ def eval(model, iterator, device, dec_maxlen):
 
     # calc per.
     per, num_errors = calc_per(Y_true, Y_pred)
-    print("per: %.2f" % per, "num errors: ", num_errors)
+    # print("    percentage: %.2f" % per, "num errors: ", num_errors)
 
-    with open("result", "w") as fout:
+    with open("result.txt", "w") as fout:
         for y_true, y_pred in zip(Y_true, Y_pred):
             fout.write(" ".join(y_true) + "\n")
             fout.write(" ".join(y_pred) + "\n\n")
+    #print ("    result.txt written.")
 
-    return per
+    return per, num_errors
+
+hp = yaml.load( open(CONFIG_PATH, "r"), Loader=yaml.FullLoader)
+
+g2idx, idx2g, p2idx, idx2p = load_vocab(hp)
+
+# print (f"g2idx={g2idx}")
+# print (f"p2idx={p2idx}")
+
+
+lexicon = load_lex(LEXICON_DE, hp)
+
+train_words, eval_words, test_words, train_prons, eval_prons, test_prons = prepare_data(lexicon)
+#print(train_words[0])
+#print(train_prons[0])
+
+train_words, train_prons = drop_lengthy_samples(train_words, train_prons, hp['model']['enc_maxlen'], hp['model']['dec_maxlen'])
+# We do NOT apply this constraint to eval and test datasets.
 
 #
 # Train & Evaluate
@@ -211,28 +225,61 @@ eval_dataset = G2pDataset(eval_words, eval_prons, g2idx, p2idx)
 # y_seqlen      = 9
 # pron          = 'ʁ aj z ə b ʊ s ə'
 
-
-train_iter = data.DataLoader(train_dataset, batch_size=hp.batch_size, shuffle=True, collate_fn=pad)
-eval_iter = data.DataLoader(eval_dataset, batch_size=hp.batch_size, shuffle=False, collate_fn=pad)
+train_iter = data.DataLoader(train_dataset, batch_size=hp['training']['batch_size'], shuffle=True, collate_fn=pad)
+eval_iter = data.DataLoader(eval_dataset, batch_size=hp['training']['batch_size'], shuffle=False, collate_fn=pad)
 
 # breakpoint()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-encoder = Encoder(hp.emb_units, hp.hidden_units, g2idx)
-decoder = Decoder(hp.emb_units, hp.hidden_units, p2idx)
+encoder = Encoder(hp['model']['emb_units'], hp['model']['hidden_units'], g2idx)
+decoder = Decoder(hp['model']['emb_units'], hp['model']['hidden_units'], p2idx)
 model = Net(encoder, decoder)
+
+if CONTINUE_TRAINING and os.path.exists(MODEL_PATH):
+    state_dict = torch.load(MODEL_PATH)
+    model.load_state_dict(state_dict)
+    print (f"model state {MODEL_PATH} loaded.")
+
 model.to(device)
 
-optimizer = optim.Adam(model.parameters(), lr = hp.lr)
+optimizer = optim.Adam(model.parameters(), lr = hp['training']['lr'])
 criterion = nn.CrossEntropyLoss(ignore_index=0)
 
-for epoch in range(1, hp.num_epochs+1):
-    print(f"\nepoch: {epoch}")
-    train(model, train_iter, optimizer, criterion, device)
-    eval(model, eval_iter, device, hp.dec_maxlen)
+writer = SummaryWriter()
 
-torch.save(model.state_dict(), MODEL_PATH)
+t = tqdm(range(1, hp['training']['num_epochs']+1))
+
+for epoch in t:
+    # print(f"\nepoch: {epoch}/{hp['training']['num_epochs']}")
+    loss = train(model, train_iter, optimizer, criterion, device)
+    writer.add_scalar('loss', loss, epoch)
+    #print(f"    loss={loss}")
+
+    _, num_errors = eval(model, eval_iter, device, hp['model']['dec_maxlen'])
+
+    t.set_description(f"loss={loss}, errs={num_errors}, lr={optimizer.param_groups[0]['lr']}")
+
+    writer.add_scalar('errs', num_errors, epoch)
+    writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
+
+state_dict = model.state_dict()
+
+torch.save(state_dict, MODEL_PATH)
 print (f"{MODEL_PATH} written.")
+
+np.savez (NPZ_PATH, enc_emb  = state_dict['encoder.emb.weight'].cpu(),
+                    enc_w_ih = state_dict['encoder.rnn.weight_ih_l0'].cpu(),
+                    enc_w_hh = state_dict['encoder.rnn.weight_hh_l0'].cpu(),
+                    enc_b_ih = state_dict['encoder.rnn.bias_ih_l0'].cpu(),
+                    enc_b_hh = state_dict['encoder.rnn.bias_hh_l0'].cpu(),
+                    dec_emb  = state_dict['decoder.emb.weight'].cpu(),
+                    dec_w_ih = state_dict['decoder.rnn.weight_ih_l0'].cpu(),
+                    dec_w_hh = state_dict['decoder.rnn.weight_hh_l0'].cpu(),
+                    dec_b_ih = state_dict['decoder.rnn.bias_ih_l0'].cpu(),
+                    dec_b_hh = state_dict['decoder.rnn.bias_hh_l0'].cpu(),
+                    fc_w     = state_dict['decoder.fc.weight'].cpu(),
+                    fc_b     = state_dict['decoder.fc.bias'].cpu())
+
+print (f"{NPZ_PATH} written.")
 

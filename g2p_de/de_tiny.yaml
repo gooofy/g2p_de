@@ -1,0 +1,14 @@
+training:
+  batch_size: 8192
+  num_epochs: 300
+  lr: 0.001
+
+model:
+  enc_maxlen : 20
+  dec_maxlen : 20
+  hidden_units : 128
+  emb_units : 64
+
+  graphemes : ["<pad>", "<unk>", "</s>", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ü', 'ö', 'ä', 'ß' ]
+  phonemes : ["<pad>", "<unk>", "<s>", "</s>", 'ts', 'ə', 'iː', 'oː', 'pf', 'aj', 'd', 'tʃ', 'm', 'œ', 'z', 'ɛ', 'ɲ', 't', 'ɟ', 'n̩', 'b', 'ɪ', 'kʰ', 'h', 'eː', 'ɔ', 'f', 'v', 'l̩', 'n', 'x', 'yː', 'p', 'c', 'aː', 'ç', 'uː', 'ʃ', 'øː', 'a', 'l', 'j', 'ɔʏ', 'cʰ', 'aw', 'ŋ', 'ɐ', 'ʊ', 'pʰ', 'ʁ', 's', 'ʏ', 'ɡ', 'tʰ', 'k', 'm̩']
+
