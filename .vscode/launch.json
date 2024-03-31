@@ -12,6 +12,15 @@
             "console": "integratedTerminal",
             "args": [],
             "cwd": "${workspaceFolder}/training"
+        },
+        {
+            "name": "inference de tiny",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "inference.py",
+            "console": "integratedTerminal",
+            "args": [],
+            "cwd": "${workspaceFolder}/training"
         }
     ]
 }

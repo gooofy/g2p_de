@@ -1,30 +1,31 @@
 #!/bin/env python3
 
 from pathlib import Path
+import yaml
 
 import torch
-from model import Encoder, Decoder, Net, Hparams, load_vocab
+from model import Encoder, Decoder, Net, load_vocab
 from g2pdata import encode, convert_ids_to_phonemes
 
 import numpy as np
 
-LEXICON_DE = Path('/home/guenter/projects/hal9000/ennis/chat/src/efficientspeech/lexicon/german_mfa.dict')
+#LEXICON_DE = Path('/home/guenter/projects/hal9000/ennis/chat/src/efficientspeech/lexicon/german_mfa.dict')
 
 MODEL_PATH = Path('g2p_de.ckpt')
-
-NPZ_PATH = Path('checkpoint_de.npz')
+CONFIG_PATH = Path('../g2p_de/de_tiny.yaml')
+#NPZ_PATH = Path('checkpoint_de.npz')
 
 # DEBUG_LIMIT = 23
 DEBUG_LIMIT = 0
 
-hp = Hparams()
+hp = yaml.load( open(CONFIG_PATH, "r"), Loader=yaml.FullLoader)
 
 g2idx, idx2g, p2idx, idx2p = load_vocab(hp)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-encoder = Encoder(hp.emb_units, hp.hidden_units, g2idx)
-decoder = Decoder(hp.emb_units, hp.hidden_units, p2idx)
+encoder = Encoder(hp['model']['emb_units'], hp['model']['hidden_units'], g2idx)
+decoder = Decoder(hp['model']['emb_units'], hp['model']['hidden_units'], p2idx)
 model = Net(encoder, decoder)
 
 print (f"loading model from {str(MODEL_PATH)} ...")
@@ -33,7 +34,6 @@ state_dict = torch.load(MODEL_PATH)
 
 for k in state_dict:
     print (f"{k}: {state_dict[k].shape}")
-
 
 # encoder.emb.weight: torch.Size([33, 64])
 # encoder.rnn.weight_ih_l0: torch.Size([384, 64])
@@ -48,23 +48,6 @@ for k in state_dict:
 # decoder.rnn.bias_hh_l0: torch.Size([384])
 # decoder.fc.weight: torch.Size([56, 128])
 # decoder.fc.bias: torch.Size([56])
-
-np.savez (NPZ_PATH, enc_emb  = state_dict['encoder.emb.weight'],
-                    enc_w_ih = state_dict['encoder.rnn.weight_ih_l0'],
-                    enc_w_hh = state_dict['encoder.rnn.weight_hh_l0'],
-                    enc_b_ih = state_dict['encoder.rnn.bias_ih_l0'],
-                    enc_b_hh = state_dict['encoder.rnn.bias_hh_l0'],
-                    dec_emb  = state_dict['decoder.emb.weight'],
-                    dec_w_ih = state_dict['decoder.rnn.weight_ih_l0'],
-                    dec_w_hh = state_dict['decoder.rnn.weight_hh_l0'],
-                    dec_b_ih = state_dict['decoder.rnn.bias_ih_l0'],
-                    dec_b_hh = state_dict['decoder.rnn.bias_hh_l0'],
-                    fc_w     = state_dict['decoder.fc.weight'],
-                    fc_b     = state_dict['decoder.fc.bias'])
-
-print (f"{NPZ_PATH} written.")
-
-# breakpoint()
 
 model.load_state_dict(state_dict)
 
@@ -93,7 +76,7 @@ model.to(device)
 
 model.eval()
 
-def g2p_en(model, word, g2idx, idx2p):
+def g2p_de(model, word, g2idx, idx2p):
 
     x = encode (word, "x", g2idx)
     #while len(x)<hp.enc_maxlen:
@@ -105,7 +88,6 @@ def g2p_en(model, word, g2idx, idx2p):
 
     print (f"x_seqlens={x_seqlens}, x={x}")
 
-    # breakpoint()
     decoder_inputs = torch.tensor([encode("", "y", p2idx)])
 
     print (f"decoder_inputs={decoder_inputs}")
@@ -119,16 +101,11 @@ def g2p_en(model, word, g2idx, idx2p):
     y_pred = convert_ids_to_phonemes(y_hat[0], idx2p)
 
     print (f"y_pred={y_pred}")
-    # breakpoint()
 
-word = "E i s e n b a h n"
-#word = "B i m b o"
-#breakpoint()
-
-g2p_en(model, "E i s e n b a h n", g2idx, idx2p)
-g2p_en(model, "B i m b o", g2idx, idx2p)
-g2p_en(model, "Z e i t u n g", g2idx, idx2p)
-g2p_en(model, "E i g e n t u m", g2idx, idx2p)
+g2p_de(model, "E i s e n b a h n", g2idx, idx2p)
+g2p_de(model, "B i m b o", g2idx, idx2p)
+g2p_de(model, "Z e i t u n g", g2idx, idx2p)
+g2p_de(model, "E i g e n t u m", g2idx, idx2p)
 
 
 
