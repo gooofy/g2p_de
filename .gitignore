@@ -10,5 +10,4 @@ training/g2p_de.ckpt
 training/result.txt
 training/training.md
 training/runs/
-.vscode/
 g2p_de.egg-info/

@@ -79,14 +79,12 @@ def prepare_data(lexicon):
     shuffle(indices)
     words = [words[idx] for idx in indices]
     prons = [prons[idx] for idx in indices]
-    num_train, num_test = int(len(words)*.8), int(len(words)*.1)
-    train_words, eval_words, test_words = words[:num_train], \
-                                          words[num_train:-num_test],\
-                                          words[-num_test:]
-    train_prons, eval_prons, test_prons = prons[:num_train], \
-                                          prons[num_train:-num_test],\
-                                          prons[-num_test:]
-    return train_words, eval_words, test_words, train_prons, eval_prons, test_prons
+    num_train, num_eval = int(len(words)*.9), int(len(words)*.1)
+    train_words, eval_words = words[:num_train], \
+                              words[-num_eval:]
+    train_prons, eval_prons = prons[:num_train], \
+                              prons[-num_eval:]
+    return train_words, eval_words, train_prons, eval_prons
 
 def drop_lengthy_samples(words, prons, enc_maxlen, dec_maxlen):
     """We only include such samples less than maxlen."""
@@ -199,12 +197,15 @@ g2idx, idx2g, p2idx, idx2p = load_vocab(hp)
 
 lexicon = load_lex(LEXICON_DE, hp)
 
-train_words, eval_words, test_words, train_prons, eval_prons, test_prons = prepare_data(lexicon)
-#print(train_words[0])
-#print(train_prons[0])
+train_words, eval_words, train_prons, eval_prons = prepare_data(lexicon)
+
+print (f"# entries: train: {len(train_words)}, eval: {len(eval_words)}")
 
 train_words, train_prons = drop_lengthy_samples(train_words, train_prons, hp['model']['enc_maxlen'], hp['model']['dec_maxlen'])
-# We do NOT apply this constraint to eval and test datasets.
+# We do NOT apply this constraint to eval dataset.
+
+print (f"# entries after dropping lenghty samples: train: {len(train_words)}, eval: {len(eval_words)}")
+
 
 #
 # Train & Evaluate
