@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "train de tiny",
+            "name": "train de",
             "type": "debugpy",
             "request": "launch",
             "program": "train.py",
@@ -14,7 +14,7 @@
             "cwd": "${workspaceFolder}/training"
         },
         {
-            "name": "inference de tiny",
+            "name": "inference de",
             "type": "debugpy",
             "request": "launch",
             "program": "inference.py",
