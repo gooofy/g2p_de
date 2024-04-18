@@ -147,7 +147,10 @@ class G2p(object):
         for word in words:
 
             if re.search("[0-9]", word):
-                word = num2words(word, lang='de')
+                try:
+                    word = num2words(word, lang='de')
+                except Exception:
+                    pass
 
             if re.search("[a-züöäß]", word) is None:
                 pron = [word]
