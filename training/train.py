@@ -20,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from model import Encoder, Decoder, Net, load_vocab
 from g2pdata import G2pDataset, convert_ids_to_phonemes
 
-CONTINUE_TRAINING = True
+CONTINUE_TRAINING = False
 
 LEXICON_DE = Path('../g2p_de/german_mfa.dict')
 
