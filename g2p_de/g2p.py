@@ -54,7 +54,8 @@ class G2p(object):
                 if not valid:
                     continue
 
-                self.lexicon[graph] = phonemes
+                if not graph in self.lexicon:
+                    self.lexicon[graph] = phonemes
 
 
     def load_variables(self):
