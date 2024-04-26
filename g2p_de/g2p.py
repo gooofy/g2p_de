@@ -131,6 +131,35 @@ class G2p(object):
         preds = [self.idx2p.get(idx, "<unk>") for idx in preds]
         return preds
 
+    def tokenize (self, text):
+
+        # preprocessing
+
+        text = text.lower().encode('latin1', errors='ignore').decode('latin1')
+        text = text.replace("z.b.", "zum beispiel")
+        text = text.replace("d.h.", "das heißt")
+
+        # tokenization
+        tokens = word_tokenize(text)
+
+        res = []
+        for token in tokens:
+
+            if re.search("[0-9]", token):
+                try:
+                    token = num2words(token, lang='de')
+                except:
+                    pass
+
+            res.append(token)
+
+        return res
+
+    def lookup (self, token):
+        if token in self.lexicon:
+            return self.lexicon[token]
+        return None
+
     def __call__(self, text):
         # preprocessing
 
@@ -144,18 +173,18 @@ class G2p(object):
         # tokens = pos_tag(words)  # tuples of (word, tag)
 
         prons = []
-        for word in words:
+        for token in words:
 
-            if re.search("[0-9]", word):
-                word = num2words(word, lang='de')
+            if re.search("[0-9]", token):
+                token = num2words(token, lang='de')
 
-            if re.search("[a-züöäß]", word) is None:
-                pron = [word]
-            elif word in self.lexicon:
-                pron = self.lexicon[word]
+            if re.search("[a-züöäß]", token) is None:
+                pron = [token]
+            elif token in self.lexicon:
+                pron = self.lexicon[token]
             else: # predict for oov
-                pron = self.predict(word)
-                # print (f"predicted: {word} [{pron}]")
+                pron = self.predict(token)
+                # print (f"predicted: {token} [{pron}]")
 
             prons.extend(pron)
             prons.extend([" "])
